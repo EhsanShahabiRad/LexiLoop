@@ -1,8 +1,8 @@
-"""Initial full schema
+"""initial schema with user and user_detail
 
-Revision ID: 1b957f49b18c
+Revision ID: 9c94f7d6a377
 Revises: 
-Create Date: 2025-05-19 19:27:14.606971
+Create Date: 2025-05-20 14:47:41.227486
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '1b957f49b18c'
+revision: str = '9c94f7d6a377'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -36,27 +36,15 @@ def upgrade() -> None:
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(length=255), nullable=False),
-    sa.Column('username', sa.String(length=50), nullable=True),
-    sa.Column('password_hash', sa.String(length=255), nullable=False),
+    sa.Column('password_hash', sa.String(length=255), nullable=True),
     sa.Column('is_email_verified', sa.Boolean(), nullable=True),
-    sa.Column('active_language_pair_id', sa.Integer(), nullable=True),
     sa.Column('role', sa.String(length=20), nullable=True),
-    sa.Column('created_at', sa.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.TIMESTAMP(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['active_language_pair_id'], ['language_pairs.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('email'),
-    sa.UniqueConstraint('username')
-    )
-    op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
-    op.create_table('words',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('text', sa.String(length=100), nullable=False),
-    sa.Column('language_pair_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['language_pair_id'], ['language_pairs.id'], ),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_words_id'), 'words', ['id'], unique=False)
+    op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
+    op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
     op.create_table('groups',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
@@ -66,16 +54,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_groups_id'), 'groups', ['id'], unique=False)
-    op.create_table('meanings',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('word_id', sa.Integer(), nullable=False),
-    sa.Column('pos_id', sa.Integer(), nullable=False),
-    sa.Column('meaning_text', sa.Text(), nullable=False),
-    sa.ForeignKeyConstraint(['pos_id'], ['pos.id'], ),
-    sa.ForeignKeyConstraint(['word_id'], ['words.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_meanings_id'), 'meanings', ['id'], unique=False)
     op.create_table('playback_sessions',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
@@ -86,6 +64,35 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_playback_sessions_id'), 'playback_sessions', ['id'], unique=False)
+    op.create_table('user_details',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('username', sa.String(length=50), nullable=True),
+    sa.Column('active_language_pair_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['active_language_pair_id'], ['language_pairs.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id')
+    )
+    op.create_index(op.f('ix_user_details_id'), 'user_details', ['id'], unique=False)
+    op.create_table('words',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('text', sa.String(length=100), nullable=False),
+    sa.Column('language_pair_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['language_pair_id'], ['language_pairs.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_words_id'), 'words', ['id'], unique=False)
+    op.create_table('meanings',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('word_id', sa.Integer(), nullable=False),
+    sa.Column('pos_id', sa.Integer(), nullable=False),
+    sa.Column('meaning_text', sa.Text(), nullable=False),
+    sa.ForeignKeyConstraint(['pos_id'], ['pos.id'], ),
+    sa.ForeignKeyConstraint(['word_id'], ['words.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_meanings_id'), 'meanings', ['id'], unique=False)
     op.create_table('tts',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('word_id', sa.Integer(), nullable=False),
@@ -125,15 +132,18 @@ def downgrade() -> None:
     op.drop_table('user_words')
     op.drop_index(op.f('ix_tts_id'), table_name='tts')
     op.drop_table('tts')
-    op.drop_index(op.f('ix_playback_sessions_id'), table_name='playback_sessions')
-    op.drop_table('playback_sessions')
     op.drop_index(op.f('ix_meanings_id'), table_name='meanings')
     op.drop_table('meanings')
-    op.drop_index(op.f('ix_groups_id'), table_name='groups')
-    op.drop_table('groups')
     op.drop_index(op.f('ix_words_id'), table_name='words')
     op.drop_table('words')
+    op.drop_index(op.f('ix_user_details_id'), table_name='user_details')
+    op.drop_table('user_details')
+    op.drop_index(op.f('ix_playback_sessions_id'), table_name='playback_sessions')
+    op.drop_table('playback_sessions')
+    op.drop_index(op.f('ix_groups_id'), table_name='groups')
+    op.drop_table('groups')
     op.drop_index(op.f('ix_users_id'), table_name='users')
+    op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_table('users')
     op.drop_index(op.f('ix_pos_id'), table_name='pos')
     op.drop_table('pos')
