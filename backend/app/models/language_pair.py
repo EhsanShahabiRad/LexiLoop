@@ -9,5 +9,4 @@ class LanguagePair(Base):
     source_lang = Column(String(10), nullable=False)
     target_lang = Column(String(10), nullable=False)
 
-    # one-to-many relationship to users (active pair)
-    users = relationship("User", back_populates="active_language_pair")
+    

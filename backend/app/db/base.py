@@ -1,4 +1,5 @@
 from app.db.base_class import Base
+from app.models.user_detail import UserDetail
 from app.models.user import User
 from app.models.language_pair import LanguagePair
 from app.models.word import Word
