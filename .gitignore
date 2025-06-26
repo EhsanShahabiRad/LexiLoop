@@ -67,3 +67,28 @@ pytest_cache/
 *.pdf
 *.mp3
 export/
+
+# Vite
+frontend/.vite/
+
+# Tailwind JIT cache
+frontend/.tailwindcache/
+
+# Node.js
+frontend/node_modules/
+frontend/package-lock.json
+frontend/yarn.lock
+frontend/pnpm-lock.yaml
+
+# Build output
+frontend/dist/
+
+# Local development
+frontend/.env.local
+frontend/.env.*.local
+
+# OS & editor specific
+*.log
+*.DS_Store
+*.swp
+*.swo
