@@ -1,6 +1,5 @@
-// frontend/src/context/AuthProvider.tsx
-import { useState, useEffect} from "react";
-import type { ReactNode } from 'react';
+import { useState, useEffect } from "react";
+import type { ReactNode } from "react";
 import AuthContext from "./AuthContext";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -22,7 +21,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ token, isLoggedIn: !!token, login, logout }}>
+    <AuthContext.Provider
+      value={{ token, isAuthenticated: !!token, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
