@@ -19,11 +19,3 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </GoogleOAuthProvider>
   </React.StrictMode>
 );
-
-//ساختن یک فایل AuthContext.tsx برای نگه داشتن وضعیت کاربر
-
-//ذخیره‌ی JWT داخلی در localStorage بعد از لاگین موفق
-
-//استفاده از useContext(AuthContext) در Navbar برای نشون دادن دکمه Login/Profile
-
-//ساختن یک PrivateRoute ساده (بعداً) برای routeهایی که نیاز به login دارن
