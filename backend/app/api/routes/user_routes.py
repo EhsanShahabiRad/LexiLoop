@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from app.dependencies.user_service import get_user_service
 
 from app.schemas.user_schema import UserCreate, UserRead
 from app.services.user_service import UserService
@@ -8,12 +9,15 @@ from app.db.session import get_db
 
 router = APIRouter()
 
-user_repository = PGUserRepository()
-user_service = UserService(user_repository)
+
 
 
 @router.post("/signup", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-def signup(user_in: UserCreate, db: Session = Depends(get_db)):
+def signup(
+    user_in: UserCreate,
+    db: Session = Depends(get_db),
+    user_service: UserService = Depends(get_user_service)
+):
     existing_user = user_service.get_user_by_email(db, user_in.email)
     if existing_user:
         raise HTTPException(
