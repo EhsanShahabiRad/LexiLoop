@@ -5,12 +5,11 @@ from google.auth.transport import requests as google_requests
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from app.core.jwt import create_access_token 
-from app.models.user import User
 from app.core.config import settings
-import traceback 
+from app.models.user import User
+from app.repositories.implementations.pg_user_repository import PGUserRepository
 
 router = APIRouter()
-
 GOOGLE_CLIENT_ID = settings.google_client_id
 
 class GoogleLoginRequest(BaseModel):
@@ -18,33 +17,30 @@ class GoogleLoginRequest(BaseModel):
 
 @router.post("/auth/google-login")
 def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
-    
     try:
         idinfo = id_token.verify_oauth2_token(
             payload.id_token,
             google_requests.Request(),
             GOOGLE_CLIENT_ID,
         )
-       
-        email = idinfo["email"]
-        name = idinfo.get("name")
 
-        user = db.query(User).filter(User.email == email).first()
+        email = idinfo["email"]
+        provider_user_id = idinfo.get("sub")
+
+        user_repository = PGUserRepository(db)
+        user = user_repository.get_by_email(email)
 
         if not user:
-            user = User(email=email, is_email_verified=True)
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-            
-        if not user.id:
-            print("❌ ERROR: User ID is None!")
+            user = User(
+                email=email,
+                is_email_verified=True,
+                auth_provider="google",
+                provider_user_id=provider_user_id
+            )
+            user = user_repository.create(user)
 
         access_token = create_access_token(subject=str(user.id))
-
         return {"access_token": access_token, "token_type": "bearer"}
 
-    except Exception as e:
-        traceback.print_exc()
-        print("❌ Exception in login:", str(e))
+    except Exception:
         raise HTTPException(status_code=401, detail="Invalid Google Token")

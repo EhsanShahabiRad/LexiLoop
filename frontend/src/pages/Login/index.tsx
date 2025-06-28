@@ -1,9 +1,22 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
-import { useAuth } from "../../context/useAuth";
+import { useAuth } from "@/context/useAuth";
 import type { CredentialResponse } from "@react-oauth/google";
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  // If already logged in, redirect to home
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Prevent rendering if already logged in
+  if (isAuthenticated) return null;
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
     const id_token = credentialResponse?.credential;
@@ -28,9 +41,6 @@ const Login = () => {
       const data = await res.json();
       login(data.access_token);
       alert("Login successful!");
-
-      // You can redirect user if needed
-      // window.location.href = "/";
     } catch (err) {
       console.error("❌ Login error:", err);
       alert("Login failed.");

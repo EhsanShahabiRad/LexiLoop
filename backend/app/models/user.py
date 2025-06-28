@@ -8,7 +8,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, nullable=True, index=True)
-    username = Column(String(50), unique=True, nullable=False)
+    username = Column(String(50), unique=True, nullable=True)
     password_hash = Column(String(255), nullable=True)
     auth_provider = Column(String(50), nullable=False, default="local")  # local, google, facebook, apple
     provider_user_id = Column(String(255), nullable=True)
