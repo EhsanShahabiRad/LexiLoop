@@ -1,29 +1,36 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from typing import Optional
 from app.models.user import User
 from app.repositories.interfaces.i_user_repository import IUserRepository
 
 
 class PGUserRepository(IUserRepository):
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
-    def get_by_id(self, user_id: int) -> Optional[User]:
-        return self.db.query(User).filter(User.id == user_id).first()
+    async def get_by_id(self, user_id: int) -> Optional[User]:
+        result = await self.db.execute(select(User).where(User.id == user_id))
+        users = result.scalars().all()
+        return users[0] if users else None
 
-    def get_by_email(self, email: str) -> Optional[User]:
-        return self.db.query(User).filter(User.email == email).first()
+    async def get_by_email(self, email: str) -> Optional[User]:
+        result = await self.db.execute(select(User).where(User.email == email))
+        users = result.scalars().all()
+        return users[0] if users else None
 
-    def get_by_username(self, username: str) -> Optional[User]:
-        return self.db.query(User).filter(User.username == username).first()
+    async def get_by_username(self, username: str) -> Optional[User]:
+        result = await self.db.execute(select(User).where(User.username == username))
+        users = result.scalars().all()
+        return users[0] if users else None
 
-    def create(self, user: User) -> User:
+    async def create(self, user: User) -> User:
         self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
+        await self.db.commit()
+        await self.db.refresh(user)
         return user
 
-    def update(self, user: User) -> User:
-        self.db.commit()
-        self.db.refresh(user)
+    async def update(self, user: User) -> User:
+        await self.db.commit()
+        await self.db.refresh(user)
         return user

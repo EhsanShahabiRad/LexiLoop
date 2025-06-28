@@ -9,6 +9,7 @@ from app.schemas.user_detail_schema import (
     UserDetailUpdate,
     UserDetailRead,
 )
+from app.mappers.user_detail_mapper import UserDetailMapper
 
 
 class PgUserDetailRepository(IUserDetailRepository):
@@ -16,15 +17,11 @@ class PgUserDetailRepository(IUserDetailRepository):
         self.session = session
 
     async def create_user_detail(self, user_id: int, data: UserDetailCreate) -> UserDetailRead:
-        user_detail = UserDetail(
-            user_id=user_id,
-            name=data.name,
-            active_language_pair_id=data.active_language_pair_id,
-        )
+        user_detail = UserDetailMapper.from_create(user_id, data)
         self.session.add(user_detail)
         await self.session.commit()
         await self.session.refresh(user_detail)
-        return UserDetailRead.from_orm(user_detail)
+        return UserDetailMapper.to_read(user_detail)
 
     async def get_user_detail_by_user_id(self, user_id: int) -> Optional[UserDetailRead]:
         result = await self.session.execute(
@@ -32,7 +29,7 @@ class PgUserDetailRepository(IUserDetailRepository):
         )
         user_detail = result.scalars().first()
         if user_detail:
-            return UserDetailRead.from_orm(user_detail)
+            return UserDetailMapper.to_read(user_detail)
         return None
 
     async def update_user_detail(self, user_id: int, data: UserDetailUpdate) -> Optional[UserDetailRead]:
@@ -43,11 +40,7 @@ class PgUserDetailRepository(IUserDetailRepository):
         if not user_detail:
             return None
 
-        if data.name is not None:
-            user_detail.name = data.name
-        if data.active_language_pair_id is not None:
-            user_detail.active_language_pair_id = data.active_language_pair_id
-
+        updated = UserDetailMapper.update_model(user_detail, data)
         await self.session.commit()
-        await self.session.refresh(user_detail)
-        return UserDetailRead.from_orm(user_detail)
+        await self.session.refresh(updated)
+        return UserDetailMapper.to_read(updated)

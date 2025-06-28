@@ -9,3 +9,4 @@ from app.models.group import Group
 from app.models.user_word import UserWord
 from app.models.tts import TTS
 from app.models.playback_session import PlaybackSession
+from app.models.language import Language
