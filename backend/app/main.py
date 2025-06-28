@@ -1,7 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from app.core.config import settings
-from app.api.routes import user_routes, auth
+from app.api.routes import user_routes, auth, user_profile
 from fastapi.middleware.cors import CORSMiddleware
+import time
+import inspect
+import app.api.routes.auth as actual_auth
 
 app = FastAPI(title=settings.project_name, debug=settings.debug)
 
@@ -13,9 +16,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 🔍 Log all requests and responses
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    body = await request.body()
+
+    print(f"\n📥 REQUEST: {request.method} {request.url}")
+    print(f"🔸 Headers: {dict(request.headers)}")
+    print(f"🔸 Body: {body.decode('utf-8') if body else '(empty)'}")
+
+    response = await call_next(request)
+
+    duration = time.time() - start_time
+    print(f"📤 RESPONSE status={response.status_code} duration={duration:.2f}s")
+    print("🟰" * 50)
+
+    return response
+
 # Route registration
 app.include_router(user_routes.router, prefix="/api/users", tags=["users"])
 app.include_router(auth.router, prefix=settings.api_v1_str, tags=["auth"])
+app.include_router(user_profile.router, prefix=settings.api_v1_str, tags=["profile"])
 
 # Root endpoint
 @app.get("/")

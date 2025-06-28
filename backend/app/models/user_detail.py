@@ -8,6 +8,10 @@ class UserDetail(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
     name = Column(String(100), nullable=True)
-    active_language_pair_id = Column(Integer, ForeignKey("language_pairs.id"), nullable=True)
+
+    source_language_id = Column(Integer, ForeignKey("languages.id", ondelete="SET NULL"))
+    target_language_id = Column(Integer, ForeignKey("languages.id", ondelete="SET NULL"))
 
     user = relationship("User", back_populates="detail")
+    source_language = relationship("Language", foreign_keys=[source_language_id])
+    target_language = relationship("Language", foreign_keys=[target_language_id])

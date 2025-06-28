@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
-
+from typing import Optional
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -9,7 +9,9 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str  # plain password for registration
+    password: Optional[str] = None
+    auth_provider: str
+    provider_user_id: Optional[str] = None
 
 
 class UserRead(UserBase):
