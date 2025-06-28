@@ -3,6 +3,7 @@ from app.core.config import settings
 from app.api.routes import user_routes, auth, user_profile
 from fastapi.middleware.cors import CORSMiddleware
 import time
+from app.db import base
 import inspect
 import app.api.routes.auth as actual_auth
 
@@ -10,7 +11,7 @@ app = FastAPI(title=settings.project_name, debug=settings.debug)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

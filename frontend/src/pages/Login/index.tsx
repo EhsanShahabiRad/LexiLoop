@@ -3,43 +3,37 @@ import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "@/context/useAuth";
 import type { CredentialResponse } from "@react-oauth/google";
+import axios from "axios";
+
+type GoogleLoginResponse = {
+  access_token: string;
+  token_type: string;
+};
 
 const Login = () => {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // If already logged in, redirect to home
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/");
     }
   }, [isAuthenticated, navigate]);
 
-  // Prevent rendering if already logged in
   if (isAuthenticated) return null;
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
+    console.log("📡 Sending request to:", axios.defaults.baseURL + "/api/v1/auth/google-login");
+
     const id_token = credentialResponse?.credential;
     if (!id_token) return;
 
     try {
-      const res = await fetch(
-        "http://localhost:8000/api/v1/auth/google-login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ id_token }),
-        }
-      );
+      const res = await axios.post<GoogleLoginResponse>("/api/v1/auth/google-login", {
+        id_token,
+      });
 
-      if (!res.ok) {
-        throw new Error("Login failed");
-      }
-
-      const data = await res.json();
-      login(data.access_token);
+      login(res.data.access_token);
       alert("Login successful!");
     } catch (err) {
       console.error("❌ Login error:", err);
