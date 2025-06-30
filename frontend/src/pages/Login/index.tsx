@@ -23,23 +23,28 @@ const Login = () => {
   if (isAuthenticated) return null;
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
-    console.log("📡 Sending request to:", axios.defaults.baseURL + "/api/v1/auth/google-login");
+  console.log("✅ Received credential response from Google:", credentialResponse);
 
-    const id_token = credentialResponse?.credential;
-    if (!id_token) return;
+  const id_token = credentialResponse?.credential;
+  if (!id_token) {
+    console.warn("❌ No ID token received.");
+    return;
+  }
 
-    try {
-      const res = await axios.post<GoogleLoginResponse>("/api/v1/auth/google-login", {
-        id_token,
-      });
+  console.log("📡 Sending request to:", axios.defaults.baseURL + "/api/v1/auth/google-login");
 
-      login(res.data.access_token);
-      alert("Login successful!");
-    } catch (err) {
-      console.error("❌ Login error:", err);
-      alert("Login failed.");
-    }
-  };
+  try {
+    const res = await axios.post<GoogleLoginResponse>("/api/v1/auth/google-login", {
+      id_token,
+    });
+
+    login(res.data.access_token);
+    alert("Login successful!");
+  } catch (err) {
+    console.error("❌ Login error:", err);
+    alert("Login failed.");
+  }
+};
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-blue-50">
@@ -49,6 +54,11 @@ const Login = () => {
       <GoogleLogin
         onSuccess={handleSuccess}
         onError={() => alert("Login Failed")}
+        theme="outline"
+        text="signin_with"
+        shape="rectangular"
+        width="300"
+        locale="en"
       />
     </div>
   );

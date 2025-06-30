@@ -6,6 +6,7 @@ import time
 from app.db import base
 import inspect
 import app.api.routes.auth as actual_auth
+from app.api.routes import language_pairs
 
 app = FastAPI(title=settings.project_name, debug=settings.debug)
 
@@ -16,29 +17,35 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# 🔍 Log all requests and responses
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
-    start_time = time.time()
-    body = await request.body()
+async def noop_middleware(request: Request, call_next):
+    return await call_next(request)
 
-    print(f"\n📥 REQUEST: {request.method} {request.url}")
-    print(f"🔸 Headers: {dict(request.headers)}")
-    print(f"🔸 Body: {body.decode('utf-8') if body else '(empty)'}")
 
-    response = await call_next(request)
 
-    duration = time.time() - start_time
-    print(f"📤 RESPONSE status={response.status_code} duration={duration:.2f}s")
-    print("🟰" * 50)
+#🔍 Log all requests and responses
+# @app.middleware("http")
+# async def log_requests(request: Request, call_next):
+#     start_time = time.time()
+#     body = await request.body()
 
-    return response
+#     # print(f"\n📥 REQUEST: {request.method} {request.url}")
+#     # print(f"🔸 Headers: {dict(request.headers)}")
+#     # print(f"🔸 Body: {body.decode('utf-8') if body else '(empty)'}")
+
+#     response = await call_next(request)
+
+#     duration = time.time() - start_time
+#     print(f"📤 RESPONSE status={response.status_code} duration={duration:.2f}s")
+#     print("🟰" * 50)
+
+#     return response
 
 # Route registration
 app.include_router(user_routes.router, prefix="/api/users", tags=["users"])
-app.include_router(auth.router, prefix=settings.api_v1_str, tags=["auth"])
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(user_profile.router, prefix=settings.api_v1_str, tags=["profile"])
+app.include_router(language_pairs.router, prefix="/api/v1/language-pairs", tags=["LanguagePairs"])
 
 # Root endpoint
 @app.get("/")

@@ -11,12 +11,23 @@ class UserDetailCreate(UserDetailBase):
     pass
 
 
-class UserDetailUpdate(UserDetailBase):
-    pass
+class UserDetailUpdate(BaseModel):
+    name: Optional[str] = None
+    source_language_id: Optional[int] = None
+    target_language_id: Optional[int] = None
 
 
-class UserDetailRead(UserDetailBase):
+from pydantic import BaseModel
+from typing import Optional
+
+class UserDetailRead(BaseModel):
+    id: int
     user_id: int
+    name: Optional[str] = None
+    source_language_id: Optional[int] = None 
+    target_language_id: Optional[int] = None 
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
+

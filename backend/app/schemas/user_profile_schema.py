@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
-
+from pydantic import BaseModel, EmailStr, Field
 
 class UserProfileRead(BaseModel):
     id: int
@@ -17,6 +17,6 @@ class UserProfileRead(BaseModel):
 
 class UserProfileUpdate(BaseModel):
     email: Optional[EmailStr] = None
-    username: Optional[str] = None
+    username: str = Field(..., min_length=1)
     name: Optional[str] = None
     active_language_pair_id: Optional[int] = None
