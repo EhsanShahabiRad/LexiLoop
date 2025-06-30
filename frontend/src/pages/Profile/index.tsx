@@ -1,36 +1,62 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/context/useAuth";
+import { profileSchema } from "./validationSchema";
+import type { ProfileFormData } from "./types";
 
-type UserProfile = {
-  email: string;
-  username: string;
-  name: string | null;
-  active_language_pair_id: string | null;
+type LanguagePair = {
+  id: number;
+  source_language_name: string;
+  target_language_name: string;
 };
 
 const ProfilePage = () => {
   const { token } = useAuth();
-  const [profile, setProfile] = useState<UserProfile>({
-    email: "",
-    username: "",
-    name: null,
-    active_language_pair_id: null,
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isValid },
+  } = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    mode: "onChange",
+    defaultValues: {
+      email: "",
+      username: "",
+      name: "",
+      active_language_pair_id: "",
+    },
   });
+
+  const [languagePairs, setLanguagePairs] = useState<LanguagePair[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axios.get<UserProfile>("/api/v1/me/profile", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const [profileRes, languageRes] = await Promise.all([
+          axios.get<ProfileFormData>("/api/v1/me/profile", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get<LanguagePair[]>("/api/v1/language-pairs"),
+        ]);
+
+        setLanguagePairs(languageRes.data);
+
+        reset({
+          email: profileRes.data.email,
+          username: profileRes.data.username,
+          name: profileRes.data.name ?? "",
+          active_language_pair_id: profileRes.data.active_language_pair_id
+            ? String(profileRes.data.active_language_pair_id)
+            : "",
         });
-        setProfile(res.data);
       } catch (err) {
-        console.error("Failed to load profile:", err);
+        console.error("Failed to load profile or language pairs:", err);
         setMessage("Failed to load profile.");
       } finally {
         setLoading(false);
@@ -38,23 +64,17 @@ const ProfilePage = () => {
     };
 
     if (token) {
-      fetchProfile();
+      fetchData();
     }
-  }, [token]);
+  }, [token, reset]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setProfile({ ...profile, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: ProfileFormData) => {
     try {
-      await axios.put("/api/v1/me/profile", profile, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      await axios.put("/api/v1/me/profile", data, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       setMessage("Profile updated successfully!");
+      reset(data);
     } catch (err) {
       console.error("Update failed:", err);
       setMessage("Update failed.");
@@ -71,16 +91,13 @@ const ProfilePage = () => {
         <div className="mb-4 text-center text-sm text-green-600">{message}</div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <label className="block text-gray-700">Email</label>
           <input
             type="email"
-            name="email"
-            value={profile.email}
-            onChange={handleChange}
-            placeholder="Enter your email"
-            className="w-full mt-1 px-4 py-2 border rounded-md"
+            {...register("email")}
+            readOnly
+            className="w-full mt-1 px-4 py-2 border rounded-md bg-gray-100 cursor-not-allowed"
           />
         </div>
 
@@ -88,41 +105,54 @@ const ProfilePage = () => {
           <label className="block text-gray-700">Username</label>
           <input
             type="text"
-            name="username"
-            value={profile.username}
-            onChange={handleChange}
-            placeholder="Choose a username"
+            {...register("username")}
             className="w-full mt-1 px-4 py-2 border rounded-md"
           />
+          {errors.username && (
+            <p className="text-red-500 text-sm">{errors.username.message}</p>
+          )}
         </div>
 
         <div>
           <label className="block text-gray-700">Name</label>
           <input
             type="text"
-            name="name"
-            value={profile.name ?? ""}
-            onChange={handleChange}
-            placeholder="Please enter your name"
+            {...register("name")}
             className="w-full mt-1 px-4 py-2 border rounded-md"
           />
+          {errors.name && (
+            <p className="text-red-500 text-sm">{errors.name.message}</p>
+          )}
         </div>
 
         <div>
-          <label className="block text-gray-700">Active Language Pair ID</label>
-          <input
-            type="number"
-            name="active_language_pair_id"
-            value={profile.active_language_pair_id ?? ""}
-            onChange={handleChange}
-            placeholder="Enter your preferred language pair ID"
+          <label className="block text-gray-700">Language Pair</label>
+          <select
+            {...register("active_language_pair_id")}
             className="w-full mt-1 px-4 py-2 border rounded-md"
-          />
+          >
+            <option value="">Select language pair</option>
+            {languagePairs.map((pair) => (
+              <option key={pair.id} value={String(pair.id)}>
+                {pair.source_language_name} → {pair.target_language_name}
+              </option>
+            ))}
+          </select>
+          {errors.active_language_pair_id && (
+            <p className="text-red-500 text-sm">
+              {errors.active_language_pair_id.message}
+            </p>
+          )}
         </div>
 
         <button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          disabled={!isValid}
+          className={`px-4 py-2 rounded text-white ${
+            isValid
+              ? "bg-blue-600 hover:bg-blue-700"
+              : "bg-gray-400 cursor-not-allowed"
+          }`}
         >
           Save
         </button>
