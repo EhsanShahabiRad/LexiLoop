@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     api_v1_str: str
     google_client_id: str
     google_client_secret: str
-
+    refresh_token_expire_days: int
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 settings = Settings()

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axiosInstance from "@/utils/axiosInstance";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/context/useAuth";
@@ -10,6 +10,19 @@ type LanguagePair = {
   id: number;
   source_language_name: string;
   target_language_name: string;
+};
+
+type UpdateProfileResponse = {
+  access_token: string;
+  token_type: string;
+  profile: {
+    email: string;
+    username: string;
+    name: string | null;
+    active_language_pair_id: number | null;
+    created_at: string;
+    id: number;
+  };
 };
 
 const ProfilePage = () => {
@@ -39,10 +52,10 @@ const ProfilePage = () => {
     const fetchData = async () => {
       try {
         const [profileRes, languageRes] = await Promise.all([
-          axios.get<ProfileFormData>("/api/v1/me/profile", {
+          axiosInstance.get<ProfileFormData>("/api/v1/me/profile", {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get<LanguagePair[]>("/api/v1/language-pairs"),
+          axiosInstance.get<LanguagePair[]>("/api/v1/language-pairs"),
         ]);
 
         setLanguagePairs(languageRes.data);
@@ -68,13 +81,32 @@ const ProfilePage = () => {
     }
   }, [token, reset]);
 
+  const { login } = useAuth();
+
   const onSubmit = async (data: ProfileFormData) => {
     try {
-      await axios.put("/api/v1/me/profile", data, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await axiosInstance.put<UpdateProfileResponse>(
+        "/api/v1/me/profile",
+        data,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.data.access_token) {
+        login(res.data.access_token);
+      }
+
+      reset({
+        email: res.data.profile.email,
+        username: res.data.profile.username,
+        name: res.data.profile.name ?? "",
+        active_language_pair_id: res.data.profile.active_language_pair_id
+          ? String(res.data.profile.active_language_pair_id)
+          : "",
       });
+
       setMessage("Profile updated successfully!");
-      reset(data);
     } catch (err) {
       console.error("Update failed:", err);
       setMessage("Update failed.");
