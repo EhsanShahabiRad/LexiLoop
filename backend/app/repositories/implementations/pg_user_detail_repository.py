@@ -8,7 +8,7 @@ from app.schemas.user_detail_schema import UserDetailUpdate, UserDetailRead
 from app.mappers.user_detail_mapper import UserDetailMapper
 
 
-class PgUserDetailRepository(IUserDetailRepository):
+class PGUserDetailRepository(IUserDetailRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
